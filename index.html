@@ -159,6 +159,21 @@ body.locked .gate{display:flex}
 .music.on .eq i:nth-child(2){animation-delay:-.3s}.music.on .eq i:nth-child(3){animation-delay:-.6s}.music.on .eq i:nth-child(4){animation-delay:-.15s}
 @keyframes eq{to{height:16px}}
 @media(max-width:520px){.music .ml{display:none}.music{padding:12px}}
+.cd{max-width:720px;margin:0 auto;text-align:center;padding:44px 32px 30px;border-radius:28px;border:1px solid rgba(255,255,255,.14);background:radial-gradient(70% 60% at 50% 60%,rgba(147,51,234,.55),transparent 75%),radial-gradient(60% 40% at 15% 0,rgba(124,58,237,.35),transparent 70%),rgba(14,10,24,.72);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 0 80px rgba(147,51,234,.28),inset 0 1px 0 rgba(255,255,255,.12)}
+.cd .eyebrow{color:#8b8dff;font-size:.72rem}
+.cd h2{font-size:clamp(1.7rem,6vw,2.6rem)}
+.cdgrid{display:flex;justify-content:center;align-items:flex-start;gap:clamp(6px,2vw,18px);margin:34px 0 28px}
+.cdgrid .u{display:flex;flex-direction:column;align-items:center;gap:12px;flex:0 1 auto}
+.cdgrid .t{min-width:clamp(62px,15vw,92px);padding:clamp(12px,3vw,20px) 6px;border-radius:16px;font:900 clamp(1.7rem,7.5vw,3.1rem)/1 var(--head);font-variant-numeric:tabular-nums;color:#fff;background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.22);box-shadow:0 8px 24px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.3),0 0 22px rgba(168,85,247,.25);text-shadow:0 0 18px rgba(216,180,254,.6);position:relative;perspective:300px}
+.cdgrid .t::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.35)}
+.cdgrid .t.chg{animation:flipin .45s ease}
+@keyframes flipin{from{transform:rotateX(-80deg);opacity:.3}to{transform:none;opacity:1}}
+.cdgrid .u span{font:600 clamp(.58rem,2.2vw,.78rem) var(--head);letter-spacing:.16em;color:var(--muted)}
+.cdgrid .sep{font:900 clamp(1.2rem,5vw,2rem) var(--head);color:#8b8dff;padding-top:clamp(14px,3.5vw,24px);text-shadow:0 0 12px rgba(139,141,255,.7);animation:pulse 1s infinite}
+.cdfoot{display:flex;justify-content:space-between;gap:12px;padding-top:18px;border-top:1px solid rgba(255,255,255,.12);color:var(--muted);font-size:.82rem}
+.bar{height:4px;border-radius:4px;background:rgba(255,255,255,.1);margin-top:12px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--p2),#d8b4fe);box-shadow:0 0 12px var(--p);border-radius:4px;transition:width 1s linear}
+#countdown{padding:40px 0}
 /* reveal */
 .rv{opacity:0;transform:translateY(28px);transition:opacity .8s,transform .8s}.rv.in{opacity:1;transform:none}
 body{animation:pg .7s ease both}@keyframes pg{from{opacity:0}}
@@ -209,6 +224,24 @@ body{animation:pg .7s ease both}@keyframes pg{from{opacity:0}}
   <div class="cta">
    <a class="btn primary" id="heroPlay" href="#game"><img class="bi" data-ic="rocket" alt="" width="22" height="22">PLAY NOW</a>
    <a class="btn ghost" data-social="discord" target="_blank" rel="noopener noreferrer">JOIN DISCORD</a>
+  </div>
+ </div>
+</section>
+
+<section id="countdown">
+ <div class="wrap">
+  <div class="cd rv" role="timer" aria-label="Countdown to launch">
+   <p class="eyebrow"><span class="dot" style="display:inline-block;margin-right:8px"></span>Countdown</p>
+   <h2 id="cdTitle">COUNTDOWN TO LAUNCH</h2>
+   <p class="lead" id="cdSub" style="margin:10px auto 0">Something extraordinary is coming.</p>
+   <div class="cdgrid">
+    <div class="u"><div class="t" id="cdD">00</div><span>DAYS</span></div><b class="sep">:</b>
+    <div class="u"><div class="t" id="cdH">00</div><span>HOURS</span></div><b class="sep">:</b>
+    <div class="u"><div class="t" id="cdM">00</div><span>MINUTES</span></div><b class="sep">:</b>
+    <div class="u"><div class="t" id="cdS">00</div><span>SECONDS</span></div>
+   </div>
+   <div class="cdfoot"><span id="cdPct">0.0% elapsed</span><span id="cdDate"></span></div>
+   <div class="bar" aria-hidden="true"><i id="cdBar"></i></div>
   </div>
  </div>
 </section>
@@ -352,6 +385,10 @@ const NEXORA = {
     youtube:   { label:'YouTube',   icon:ICONS.youtube, url:'https://youtube.com/@nexorarp-official?si=srWYSOuU8iHS2WWX',        blurb:'Trailers, devlogs and community clips.' },
     instagram: { label:'Instagram', icon:ICONS.instagram, url:'https://www.instagram.com/nexorarpofficial?jplx=NjIxNWQ3cTJ2dnVx',       blurb:'Screenshots, teasers and behind the scenes.' }
   },
+  launch: {
+    target: '2027-07-24T00:00:00+05:30',   // launch date & time (IST) — change this to move the countdown
+    start:  '2026-11-24T00:00:00+05:30'    // when the countdown began (used for the % elapsed bar)
+  },
   requireLogin: true,             // visitors must sign in with Google before they can see the site
   legal: { privacy:'#privacy', terms:'#terms', email:'nexorarpofficial26@gmail.com', updated:'November 24, 2026' },
 
@@ -457,7 +494,7 @@ function setUser(u){
   if (!u) { try { sessionStorage.removeItem('nxw'); } catch (e) {} $('#toast').classList.remove('show'); }
   document.body.classList.toggle('authed', !!u);
   document.body.classList.toggle('locked', GATE && !u); if (GATE && !u) window.scrollTo(0, 0);
-  if (u) { $('#uName').textContent = u.name; const p = $('#uPic'); p.src = u.photo || IMG.user; if (dlg.open) dlg.close(); welcome(u); }
+  if (u) { $('#uName').textContent = u.name; const p = $('#uPic'); p.src = u.photo || IMG.user; if (dlg.open) dlg.close(); welcome(u); if (window.nxMusic) window.nxMusic(); }
 }
 async function initAuth(){
   if (!Auth.configured) return;
@@ -516,8 +553,27 @@ document.querySelectorAll('main section').forEach(s => spy.observe(s));
   addEventListener('click', first, true); addEventListener('keydown', first, true);
   b.addEventListener('click', () => { if (a.paused) { want = true; save(true); a.play().catch(() => {}); } else { want = false; save(false); a.pause(); } cleanup(); ui(); });
   a.addEventListener('play', ui); a.addEventListener('pause', ui);
+  window.nxMusic = () => { if (want && a.paused) a.play().then(cleanup).catch(() => {}); };
+  window.nxMusic();
   document.addEventListener('visibilitychange', () => { if (document.hidden) a.pause(); else if (want && a.currentTime > 0) a.play().catch(() => {}); });
   ui();
+})();
+
+/* ---------- launch countdown (same date for every visitor) ---------- */
+(() => {
+  const T = new Date(NEXORA.launch.target).getTime(), S = new Date(NEXORA.launch.start).getTime();
+  const ids = { d:'#cdD', h:'#cdH', m:'#cdM', s:'#cdS' }, last = {};
+  const set = (k, v) => { const n = $(ids[k]); const t = String(v).padStart(2, '0'); if (last[k] !== t) { last[k] = t; n.textContent = t; n.classList.remove('chg'); void n.offsetWidth; n.classList.add('chg'); } };
+  $('#cdDate').textContent = new Date(T).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  const tick = () => {
+    const now = Date.now(), left = Math.max(0, T - now), sec = Math.floor(left / 1000);
+    set('d', Math.floor(sec / 86400)); set('h', Math.floor(sec % 86400 / 3600)); set('m', Math.floor(sec % 3600 / 60)); set('s', sec % 60);
+    const pct = Math.min(100, Math.max(0, (now - S) / (T - S) * 100));
+    $('#cdPct').textContent = pct.toFixed(1) + '% elapsed'; $('#cdBar').style.width = pct + '%';
+    if (left === 0) { $('#cdTitle').textContent = 'THE WAIT IS OVER'; $('#cdSub').textContent = 'Welcome to Nexora RP.'; }
+  };
+  tick(); setInterval(tick, 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
 })();
 
 /* ---------- legal dialogs ---------- */

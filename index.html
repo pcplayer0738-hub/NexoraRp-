@@ -174,6 +174,10 @@ body.locked .gate{display:flex}
 .bar{height:4px;border-radius:4px;background:rgba(255,255,255,.1);margin-top:12px;overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--p2),#d8b4fe);box-shadow:0 0 12px var(--p);border-radius:4px;transition:width 1s linear}
 #countdown{padding:40px 0}
+.btn.dc{background:linear-gradient(135deg,#5865F2,#4752c4);border-color:transparent;box-shadow:0 0 24px rgba(88,101,242,.4)}
+.btn.dc:hover{box-shadow:0 0 40px rgba(88,101,242,.6)}
+.btn .dic svg{width:18px;height:18px;display:block}
+.gate .btn+.btn{margin-top:12px}
 /* reveal */
 .rv{opacity:0;transform:translateY(28px);transition:opacity .8s,transform .8s}.rv.in{opacity:1;transform:none}
 body{animation:pg .7s ease both}@keyframes pg{from{opacity:0}}
@@ -302,6 +306,7 @@ body{animation:pg .7s ease both}@keyframes pg{from{opacity:0}}
   <button class="btn primary" id="gateBtn" type="button">
    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#fff" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.5 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>
    CONTINUE WITH GOOGLE</button>
+  <button class="btn dc" id="gateDiscord" type="button"><span class="dic" aria-hidden="true"></span>CONTINUE WITH DISCORD</button>
   <p class="gerr" id="gateMsg" role="alert"></p>
   <div class="gl"><a href="#terms">Terms of Service</a><a href="#privacy">Privacy Policy</a></div>
  </div>
@@ -319,6 +324,7 @@ body{animation:pg .7s ease both}@keyframes pg{from{opacity:0}}
   <button class="btn primary sm" id="googleBtn" type="button">
    <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true"><path fill="#fff" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.5 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>
    CONTINUE WITH GOOGLE</button>
+  <button class="btn dc sm" id="dlgDiscord" type="button"><span class="dic" aria-hidden="true"></span>CONTINUE WITH DISCORD</button>
   <button class="btn ghost sm" id="closeDlg" type="button">CLOSE</button>
  </div>
 </dialog>
@@ -349,7 +355,7 @@ body{animation:pg .7s ease both}@keyframes pg{from{opacity:0}}
   <p class="up">LAST UPDATED: <span data-legal="updated"></span></p>
   <p>This policy explains what information Nexora RP collects, how we use it, and the choices you have.</p>
   <h4>1. INFORMATION WE COLLECT</h4>
-  <ul><li><b>Account information:</b> if you choose “Continue with Google”, we receive your name, email address and profile picture from Google through our authentication provider. We never receive your Google password.</li><li><b>Game &amp; community data:</b> once the game launches, this may include your in-game identifiers, character data, gameplay activity, chat and moderation records.</li><li><b>Technical data:</b> basic information such as device type, browser, IP address and error logs, used to keep the Service secure and working.</li></ul>
+  <ul><li><b>Account information:</b> if you choose “Continue with Google”, we receive your name, email address and profile picture from Google through our authentication provider. We never receive your Google password. If you choose “Continue with Discord”, we receive your Discord username and avatar, never your Discord password.</li><li><b>Game &amp; community data:</b> once the game launches, this may include your in-game identifiers, character data, gameplay activity, chat and moderation records.</li><li><b>Technical data:</b> basic information such as device type, browser, IP address and error logs, used to keep the Service secure and working.</li></ul>
   <h4>2. HOW WE USE IT</h4>
   <ul><li>To sign you in and show your profile on the site.</li><li>To run, secure and improve the Service and game.</li><li>To enforce rules, prevent cheating and abuse, and handle appeals.</li><li>To send important service announcements. We do not sell your data or send third-party advertising.</li></ul>
   <h4>3. SHARING</h4><p>We share data only with service providers needed to operate the Service (such as our authentication, hosting and database providers), when required by law, or to protect the safety and rights of our community. We do not sell personal information.</p>
@@ -399,7 +405,8 @@ const NEXORA = {
   auth: {
     provider: 'firebase',            // 'firebase' | 'supabase' | 'none'
     firebase: { apiKey:'AIzaSyA3Ww1ramMbCm0-XJEpUUL_rOV1WG-ZthU', authDomain:'nexorarpofficial27.firebaseapp.com', projectId:'nexorarpofficial27', appId:'1:155360094237:web:1656f68fb88d0e1c6cbef4' },
-    supabase: { url:'', anonKey:'' }
+    supabase: { url:'', anonKey:'' },
+    discord: { clientId:'', tokenEndpoint:'/api/discord' }   // Firebase mode only (Supabase has Discord built in). clientId is public; the secret lives in Vercel env vars.
   }
 };
 
@@ -416,7 +423,24 @@ const adapters = {
       await loadScript(b + 'firebase-app-compat.min.js'); await loadScript(b + 'firebase-auth-compat.min.js');
       firebase.initializeApp(NEXORA.auth.firebase); this.auth = firebase.auth();
     },
-    signIn(){ return this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); },
+    signIn(p){ if (p === 'discord') return this.discord(); return this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); },
+    discord(){
+      const c = NEXORA.auth.discord, st = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2));
+      try { sessionStorage.setItem('nxds', st); } catch (e) {}
+      location.href = 'https://discord.com/oauth2/authorize?' + new URLSearchParams({ client_id:c.clientId, response_type:'code', scope:'identify', state:st, redirect_uri:location.origin + '/' });
+    },
+    async handleRedirect(){
+      const q = new URLSearchParams(location.search), code = q.get('code'); if (!code) return;
+      let st = null; try { st = sessionStorage.getItem('nxds'); sessionStorage.removeItem('nxds'); } catch (e) {}
+      if (!st || st !== q.get('state')) return;
+      const m = document.getElementById('gateMsg'); m.textContent = 'Signing you in with Discord…';
+      try {
+        const r = await fetch(NEXORA.auth.discord.tokenEndpoint, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ code, redirect_uri:location.origin + '/' }) });
+        if (!r.ok) throw new Error('exchange failed');
+        await this.auth.signInWithCustomToken((await r.json()).token); m.textContent = '';
+      } catch (e) { m.textContent = 'Discord sign-in failed. Please try again.'; }
+      history.replaceState(null, '', location.pathname);
+    },
     signOut(){ return this.auth.signOut(); },
     onChange(cb){ this.auth.onAuthStateChanged(u => cb(norm(u))); }
   },
@@ -426,7 +450,7 @@ const adapters = {
       await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js');
       this.client = supabase.createClient(NEXORA.auth.supabase.url, NEXORA.auth.supabase.anonKey);
     },
-    signIn(){ return this.client.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: location.origin + location.pathname } }); },
+    signIn(p){ return this.client.auth.signInWithOAuth({ provider: p === 'discord' ? 'discord' : 'google', options:{ redirectTo: location.origin + location.pathname } }); },
     signOut(){ return this.client.auth.signOut(); },
     onChange(cb){
       this.client.auth.getSession().then(({data}) => cb(norm(data.session?.user)));
@@ -498,7 +522,7 @@ function setUser(u){
 }
 async function initAuth(){
   if (!Auth.configured) return;
-  try { await Auth.init(); Auth.onChange(setUser); } catch (e) { console.error('Auth init failed', e); }
+  try { await Auth.init(); Auth.onChange(setUser); if (Auth.handleRedirect) Auth.handleRedirect(); } catch (e) { console.error('Auth init failed', e); }
 }
 $('#loginBtn').addEventListener('click', () => {
   $('#dlgMsg').innerHTML = Auth.configured
@@ -516,6 +540,15 @@ $('#gateBtn').addEventListener('click', async () => {
   const m = $('#gateMsg'); m.textContent = '';
   try { await Auth.signIn(); } catch (e) { m.textContent = 'Sign-in was cancelled or failed. Please try again.'; }
 });
+
+document.querySelectorAll('.dic').forEach(n => n.innerHTML = ICONS.discord);
+const discordLogin = async m => {
+  m.textContent = ''; const c = NEXORA.auth.discord || {};
+  if (NEXORA.auth.provider === 'firebase' && !(c.clientId && c.tokenEndpoint)) { m.textContent = 'Discord login isn’t set up yet.'; return; }
+  try { await Auth.signIn('discord'); } catch (e) { m.textContent = 'Discord sign-in failed. Please try again.'; }
+};
+$('#gateDiscord').addEventListener('click', () => discordLogin($('#gateMsg')));
+$('#dlgDiscord').addEventListener('click', () => discordLogin($('#dlgMsg')));
 
 /* ---------- nav ---------- */
 const burger = $('#burger'), menu = $('#menu');
